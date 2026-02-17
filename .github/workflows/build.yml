@@ -89,7 +89,7 @@ jobs:
             sed -i -E "s/.*\\.$provider$/$provider/" raw_unfiltered.txt
           done
 
-          grep -Fivf "blocked_keywords.txt" raw_unfiltered.txt | \
+          grep -Fivf ".github/blocked_keywords.txt" raw_unfiltered.txt | \
           grep -Ei -v "^1w[a-z0-9]{1,8}\.(life|top|win|xyz|com|site|online|link)$" | \
           grep -Ei -v "^1vv[a-z0-9]{1,10}\.(life|top|win|xyz|com|site|online|link)$" | \
           grep -Ei -v "^gw[a-z0-9]{4,5}x\.(life|space|rest|click|run|today|site|live|sbs|pro|vip|top|com)$" | \
