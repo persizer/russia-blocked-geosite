@@ -86,13 +86,14 @@ jobs:
           cat ./community/data/antifilter-download \
               ./community/data/antifilter-download-community \
               ./community/data/refilter | sed '/^#/d; /^[[:space:]]*$/d' | sort -u > raw_unfiltered.txt
+          echo "Domains count after merging: $(wc -l < raw_unfiltered.txt)"
 
           for provider in amazonaws.com googleusercontent.com cloudfront.net akamaized.net azurewebsites.net cloudflare.net fastly.net netlify.app googlevideo.com gvt1.com apple.com mzstatic.com; do
             sed -i -E "s/.*\\.$provider$/$provider/" raw_unfiltered.txt
           done
 
           grep -Fivf "$GITHUB_WORKSPACE/.github/blocked_keywords.txt" raw_unfiltered.txt > blacklisted.txt
-          echo "Domains remaining after keyword blacklist: $(wc -l < blacklisted.txt)" | \
+          echo "Domains remaining after keyword blacklist: $(wc -l < blacklisted.txt)"
           grep -Ei -v "^1w[a-z0-9]{1,8}\.(life|top|win|xyz|com|site|online|link)$" blacklisted.txt | \
           grep -Ei -v "^1vv[a-z0-9]{1,10}\.(life|top|win|xyz|com|site|online|link)$" | \
           grep -Ei -v "^gw[a-z0-9]{4,5}x\.(life|space|rest|click|run|today|site|live|sbs|pro|vip|top|com)$" | \
