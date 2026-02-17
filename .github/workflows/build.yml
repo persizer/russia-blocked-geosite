@@ -164,9 +164,7 @@ jobs:
       - name: Move and generate sha256 hash
         run: |
           mkdir -p ./publish
-          install -Dp ./custom/publish/geosite-ru-only.dat ./publish/geosite-ru-only.dat
           install -Dp ./custom/publish/geosite.dat ./publish/geosite.dat
-          cp ./community/data/{ru-blocked-all,category-ads-all,discord,youtube,google,private} ./publish/ 2>/dev/null || true
           sha256sum ./publish/geosite.dat > ./publish/geosite.dat.sha256sum
 
       - name: Release and upload assets
