@@ -93,9 +93,11 @@ jobs:
           done
 
           if [ -f ".github/blocked_keywords.txt" ]; then
-            grep -Fivf ".github/blocked_keywords.txt" raw_unfiltered.txt > blacklisted.txt
+            tr -d '\r' < ".github/blocked_keywords.txt" | sed '/^[[:space:]]*$/d' > sanitized_blacklist.txt
+            echo "Sanitized blacklist contains $(wc -l < sanitized_blacklist.txt) keywords"
+            grep -Fivf sanitized_blacklist.txt raw_unfiltered.txt > blacklisted.txt
           else
-            echo "WARNING: Blacklist file not found at .github/blocked_keywords.txt"
+            echo "ERROR: Blacklist file not found!"
             cp raw_unfiltered.txt blacklisted.txt
           fi
           echo "Domains remaining after keyword blacklist: $(wc -l < blacklisted.txt)"
