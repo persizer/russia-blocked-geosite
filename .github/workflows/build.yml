@@ -76,23 +76,24 @@ jobs:
           curl -sSL $ADGUARD_DNS_REJECT_URL | perl -ne '/^\|\|([-_0-9a-zA-Z]+(\.[-_0-9a-zA-Z]+){1,64})\^$/ && print "$1\n"' | perl -ne 'print if not /^[0-9]{1,3}(\.[0-9]{1,3}){3}$/' > temp-reject.txt
           curl -sSL $PETERLOWE_REJECT_URL | perl -ne '/^127\.0\.0\.1\s([-_0-9a-zA-Z]+(\.[-_0-9a-zA-Z]+){1,64})$/ && print "$1\n"' >> temp-reject.txt
           sed -i '/t.co/d' temp-reject.txt
-          sort -u temp-reject.txt | awk 'length($0) < 40' | grep -Ei -v "casino|bet|poker|gambl|slot|winline|1xbet|fonbet|lucky|vulkan" | head -n 25000 > ./community/data/category-ads-all
-          rm temp-reject.txt
+          sort -u temp-reject.txt | awk 'length($0) < 40' | \
+          grep -Ei -v "casino|bet|poker|gambl|slot|winline|1xbet|fonbet|lucky|vulkan" > temp-ads.txt
+          head -n 25000 temp-ads.txt > ./community/data/category-ads-all
+          rm temp-ads.txt
 
       - name: Merge, Filter and Slim Ru-Blocked
         run: |
           cat ./community/data/antifilter-download \
               ./community/data/antifilter-download-community \
               ./community/data/refilter | sed '/^#/d; /^[[:space:]]*$/d' | sort -u > raw_unfiltered.txt
-          
-          echo "Initial unique domains: $(wc -l < raw_unfiltered.txt)"
 
           for provider in amazonaws.com googleusercontent.com cloudfront.net akamaized.net azurewebsites.net cloudflare.net fastly.net netlify.app googlevideo.com gvt1.com apple.com mzstatic.com; do
             sed -i -E "s/.*\\.$provider$/$provider/" raw_unfiltered.txt
           done
 
-          grep -Fivf "$GITHUB_WORKSPACE/.github/blocked_keywords.txt" raw_unfiltered.txt | \
-          grep -Ei -v "^1w[a-z0-9]{1,8}\.(life|top|win|xyz|com|site|online|link)$" | \
+          grep -Fivf "$GITHUB_WORKSPACE/.github/blocked_keywords.txt" raw_unfiltered.txt > blacklisted.txt
+          echo "Domains remaining after keyword blacklist: $(wc -l < blacklisted.txt)" | \
+          grep -Ei -v "^1w[a-z0-9]{1,8}\.(life|top|win|xyz|com|site|online|link)$" blacklisted.txt | \
           grep -Ei -v "^1vv[a-z0-9]{1,10}\.(life|top|win|xyz|com|site|online|link)$" | \
           grep -Ei -v "^gw[a-z0-9]{4,5}x\.(life|space|rest|click|run|today|site|live|sbs|pro|vip|top|com)$" | \
           grep -Ei -v "^kr[0-9a-z-]{1,8}\.(cc|at|ru|com|net|xyz|ink|to|icu|space|pw|li|st|my|su|cfd|click)$" | \
@@ -118,8 +119,6 @@ jobs:
           grep -Ei -v "casino|bet|poker|gambl|slot|winline|1xbet|fonbet|lucky|vulkan" | \
           awk -F. 'NF <= 4' | awk 'length($0) < 32' | sort -u > clean_merged.txt
 
-          echo "After regex and depth filters: $(wc -l < clean_merged.txt)"
-
           sort clean_merged.txt | awk '
             {
               is_sub=0; n=split($0, p, ".");
@@ -131,7 +130,7 @@ jobs:
             }
           ' > ./community/data/ru-blocked-all
 
-          echo "Final count (ru-blocked-all): $(wc -l < ./community/data/ru-blocked-all)"
+          echo "Final Ru-Blocked Count: $(wc -l < ./community/data/ru-blocked-all)"
 
           rm raw_unfiltered.txt clean_merged.txt
           rm ./community/data/antifilter-download ./community/data/antifilter-download-community ./community/data/refilter
