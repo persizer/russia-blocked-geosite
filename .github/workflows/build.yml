@@ -84,6 +84,8 @@ jobs:
           cat ./community/data/antifilter-download \
               ./community/data/antifilter-download-community \
               ./community/data/refilter | sed '/^#/d; /^[[:space:]]*$/d' | sort -u > raw_unfiltered.txt
+          
+          echo "Initial unique domains: $(wc -l < raw_unfiltered.txt)"
 
           for provider in amazonaws.com googleusercontent.com cloudfront.net akamaized.net azurewebsites.net cloudflare.net fastly.net netlify.app googlevideo.com gvt1.com apple.com mzstatic.com; do
             sed -i -E "s/.*\\.$provider$/$provider/" raw_unfiltered.txt
@@ -116,7 +118,9 @@ jobs:
           grep -Ei -v "casino|bet|poker|gambl|slot|winline|1xbet|fonbet|lucky|vulkan" | \
           awk -F. 'NF <= 4' | awk 'length($0) < 32' | sort -u > clean_merged.txt
 
-          awk '
+          echo "After regex and depth filters: $(wc -l < clean_merged.txt)"
+
+          sort clean_merged.txt | awk '
             {
               is_sub=0; n=split($0, p, ".");
               for(i=2; i<=n; i++) {
@@ -125,7 +129,9 @@ jobs:
               }
               if(!is_sub){print; seen[$0]=1}
             }
-          ' clean_merged.txt > ./community/data/ru-blocked-all
+          ' > ./community/data/ru-blocked-all
+
+          echo "Final count (ru-blocked-all): $(wc -l < ./community/data/ru-blocked-all)"
 
           rm raw_unfiltered.txt clean_merged.txt
           rm ./community/data/antifilter-download ./community/data/antifilter-download-community ./community/data/refilter
