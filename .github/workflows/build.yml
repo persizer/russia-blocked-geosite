@@ -76,21 +76,8 @@ jobs:
           curl -sSL $ADGUARD_DNS_REJECT_URL | perl -ne '/^\|\|([-_0-9a-zA-Z]+(\.[-_0-9a-zA-Z]+){1,64})\^$/ && print "$1\n"' | perl -ne 'print if not /^[0-9]{1,3}(\.[0-9]{1,3}){3}$/' > temp-reject.txt
           curl -sSL $PETERLOWE_REJECT_URL | perl -ne '/^127\.0\.0\.1\s([-_0-9a-zA-Z]+(\.[-_0-9a-zA-Z]+){1,64})$/ && print "$1\n"' >> temp-reject.txt
           sed -i '/t.co/d' temp-reject.txt
-          
-          sort -u temp-reject.txt | awk '{print length, $0}' | sort -n | cut -d" " -f2- > sorted_ads_raw.txt
-          awk '
-            tolower($0) ~ /casino|bet|poker|gambl|slot|winline|1xbet|fonbet|lucky|vulkan/ { next }
-            length($0) >= 40 { next }
-            {
-              is_sub=0; n=split($0, p, ".");
-              for(i=2; i<=n; i++) {
-                pa=""; for(j=i; j<=n; j++) pa=(pa==""?p[j]:pa"."p[j]);
-                if(pa in seen){is_sub=1; break}
-              }
-              if(!is_sub){print; seen[$0]=1}
-            }
-          ' sorted_ads_raw.txt | head -n 25000 > ./community/data/category-ads-all
-          rm temp-reject.txt sorted_ads_raw.txt
+          sort -u temp-reject.txt | awk 'length($0) < 40' | grep -Ei -v "casino|bet|poker|gambl|slot|winline|1xbet|fonbet|lucky|vulkan" | head -n 25000 > ./community/data/category-ads-all
+          rm temp-reject.txt
 
       - name: Merge, Filter and Slim Ru-Blocked
         run: |
@@ -102,52 +89,45 @@ jobs:
             sed -i -E "s/.*\\.$provider$/$provider/" raw_unfiltered.txt
           done
 
-          sort -u raw_unfiltered.txt | awk '{print length, $0}' | sort -n | cut -d" " -f2- > sorted_raw.txt
+          grep -Fivf "blocked_keywords.txt" raw_unfiltered.txt | \
+          grep -Ei -v "^1w[a-z0-9]{1,8}\.(life|top|win|xyz|com|site|online|link)$" | \
+          grep -Ei -v "^1vv[a-z0-9]{1,10}\.(life|top|win|xyz|com|site|online|link)$" | \
+          grep -Ei -v "^gw[a-z0-9]{4,5}x\.(life|space|rest|click|run|today|site|live|sbs|pro|vip|top|com)$" | \
+          grep -Ei -v "^kr[0-9a-z-]{1,8}\.(cc|at|ru|com|net|xyz|ink|to|icu|space|pw|li|st|my|su|cfd|click)$" | \
+          grep -v "trans" | \
+          grep -v "ass" | \
+          grep -Ei -v "pegas" | \
+          grep -Ei -v "^(casi|casin)[0-9]+" | \
+          grep -Ei -v "^igr[aioy]" | \
+          grep -Ei -v "([vw][u1l]{1,2}[l1k][ck][a4]n|vlk|vlc)" | \
+          grep -Ei -v "^(ww[^w.]|ww[0-9]|ww-|wv|w-w)" | \
+          grep -Ei -v "(..+xnxx|xnxx..+)" | \
+          grep -Ei -v "zoo([^m]|$)" | \
+          grep -Ei -v "^auf([-.]|[0-9a-z]*[0-9])[0-9a-z]*\." | \
+          grep -Ei -v "c[4a][sz][1i0o][n0o]" | \
+          grep -Ei -v "^(0|q|xxx)\." | \
+          grep -Ei -v "^(x|q|nu|b|x-|q-)[0-9]+\." | \
+          grep -v "video1\.video1" | \
+          grep -v "\.onion\." | \
+          grep -Ei -v "^up[a-z0-9]{2,8}x\.(life|tech|xyz|com|su|ru)$" | \
+          grep -Ei -v "\.(homes|monster|space|рф|today|xn--p1ai|онлайн|сайт|блог|москва|porn|sx|cam|buzz|cfd)$" | \
+          grep -Ei -v "(^[0-9]{4,}|[a-z0-9]{15,})" | \
+          grep -Ei -v "[a-f0-9]{32,}" | \
+          grep -Ei -v "casino|bet|poker|gambl|slot|winline|1xbet|fonbet|lucky|vulkan" | \
+          awk -F. 'NF <= 4' | awk 'length($0) < 32' | sort -u > clean_merged.txt
 
-          awk -v bl_file=".github/blocked_keywords.txt" '
-            BEGIN {
-              if ((getline < bl_file) > 0) {
-                do { bl[tolower($0)] = 1 } while ((getline < bl_file) > 0)
-              }
-            }
-
-            bl[tolower($0)] { next }
-
-            /^(1w[a-z0-9]{1,8}|1vv[a-z0-9]{1,10})\.(life|top|win|xyz|com|site|online|link)$/ { next }
-            /^gw[a-z0-9]{4,5}x\.(life|space|rest|click|run|today|site|live|sbs|pro|vip|top|com)$/ { next }
-            /^kr[0-9a-z-]{1,8}\.(cc|at|ru|com|net|xyz|ink|to|icu|space|pw|li|st|my|su|cfd|click)$/ { next }
-            /\b(trans|ass|pegas)\b/ { next }
-            /^(casi|casin)[0-9]+/ { next }
-            tolower($0) ~ /^igr[aioy]/ { next }
-            tolower($0) ~ /([vw][u1l]{1,2}[l1k][ck][a4]n|vlk|vlc)/ { next }
-            /^(ww[^w.]|ww[0-9]|ww-|wv|w-w)/ { next }
-            /(..+xnxx|xnxx..+)/ { next }
-            /zoo([^m]|$)/ { next }
-            /^auf([-.]|[0-9a-z]*[0-9])[0-9a-z]*\./ { next }
-            tolower($0) ~ /c[4a][sz][1i0o][n0o]/ { next }
-            /^(0|q|xxx)\./ { next }
-            /^(x|q|nu|b|x-|q-)[0-9]+\./ { next }
-            /video1\.video1/ { next }
-            /\.onion\./ { next }
-            /^up[a-z0-9]{2,8}x\.(life|tech|xyz|com|su|ru)$/ { next }
-            tolower($0) ~ /\.(homes|monster|space|рф|today|xn--p1ai|онлайн|сайт|блог|москва|porn|sx|cam|buzz|cfd)$/ { next }
-            tolower($0) ~ /(^[0-9]{4,}|[a-z0-9]{15,})/ { next }
-            tolower($0) ~ /casino|bet|poker|gambl|slot|winline|1xbet|fonbet|lucky|vulkan/ { next }
-            /[a-f0-9]{32,}/ { next }
-            
-            { n=split($0, p, "."); if (n > 4) next; }
-
+          awk '
             {
-              is_sub=0;
+              is_sub=0; n=split($0, p, ".");
               for(i=2; i<=n; i++) {
                 pa=""; for(j=i; j<=n; j++) pa=(pa==""?p[j]:pa"."p[j]);
                 if(pa in seen){is_sub=1; break}
               }
               if(!is_sub){print; seen[$0]=1}
             }
-          ' sorted_raw.txt > ./community/data/ru-blocked-all
+          ' clean_merged.txt > ./community/data/ru-blocked-all
 
-          rm raw_unfiltered.txt sorted_raw.txt
+          rm raw_unfiltered.txt clean_merged.txt
           rm ./community/data/antifilter-download ./community/data/antifilter-download-community ./community/data/refilter
 
       - name: Build Ru only list
