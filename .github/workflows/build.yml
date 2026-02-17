@@ -94,9 +94,9 @@ jobs:
           grep -Ei -v "^1vv[a-z0-9]{1,10}\.(life|top|win|xyz|com|site|online|link)$" | \
           grep -Ei -v "^gw[a-z0-9]{4,5}x\.(life|space|rest|click|run|today|site|live|sbs|pro|vip|top|com)$" | \
           grep -Ei -v "^kr[0-9a-z-]{1,8}\.(cc|at|ru|com|net|xyz|ink|to|icu|space|pw|li|st|my|su|cfd|click)$" | \
-          grep -v "trans" | \
-          grep -v "ass" | \
-          grep -Ei -v "pegas" | \
+          grep -v "\btrans\b" | \
+          grep -v "\bass\b" | \
+          grep -Ei -v "\bpegas\b" | \
           grep -Ei -v "^(casi|casin)[0-9]+" | \
           grep -Ei -v "^igr[aioy]" | \
           grep -Ei -v "([vw][u1l]{1,2}[l1k][ck][a4]n|vlk|vlc)" | \
